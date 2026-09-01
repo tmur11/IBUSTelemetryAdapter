@@ -104,19 +104,21 @@ void loop() {
         checksum |= buf[31] << 8;
         // Check for control bytes and checksum (CRC-16/MODBUS)
         if(ctrlBytes == 0x30030001 && checksum == calcCRC16(buf, HWT_PACKAGE_SIZE - 2, CRC16_MODBUS_POLYNOME, CRC16_MODBUS_INITIAL, CRC16_MODBUS_XOR_OUT, CRC16_MODBUS_REV_IN, CRC16_MODBUS_REV_OUT, CRC_YIELD_DISABLED)) {
+          // Trame valide → Mettre à jour les valeurs
+          throttleIn = buffer[9];
+          throttleOut = buffer[10];
+          direction = buffer[11];
           // RPM bytes 13 and 14
-          rpm = 0;
-          rpm |= buf[13];
-          rpm |= buf[14] << 8;
-          // Voltage byte 15
-          voltage = buf[15];
+          rpm = buffer[13] | (buffer[14] << 8);
+          // Voltage byte 15 and 16
+          voltage = buffer[15] | (buffer[16] << 8);
           // ESC temperature byte 19
-          escTemp = buf[19];
+          escTemp = buffer[19] | (buffer[20] << 8);
           // Motor temperature byte 21
-          motorTemp = buf[21];
+          motorTemp = buffer[21] | (buffer[22] << 8);
         } else {
           // Control byte or checksum invalid
-          rpm = 0;
+          //Otherwise: invalid frame → keep the old values
         }
         // Write to i-bus
         IBus.setSensorMeasurement(1, rpm * 10 / (MOTOR_POLES / 2));
